@@ -4,137 +4,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Employee Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-
 </head>
 
 <body>
-    <form id="form">
-        <input type="text" id="name" name="name" placeholder="Name" required>
-        <input type="number" id="age" name="age" placeholder="Age" required>
-        <input type="file" id="profile" name="profile" accept="image/*">
+    <div class="container my-4">
+        <h1 class="text-center">Simple Employee Management System</h1>
 
-    </form>
-    <button onclick="submit()"> submit</button>
+        <!-- Alert section -->
+        <div id="alertContainer"></div>
 
-    <hr>
-    <table cellspacing="0">
-        <thead>
-            <tr>
-                <th>id</th>
-                <th>name</th>
-                <th>age</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody id="employees">
-            <!-- Rows will be inserted here -->
-        </tbody>
-    </table>
+        <!-- Form Section -->
+        <div class="row g-3">
+            <div class="col-md-4 d-flex justify-content-center">
+                <img id="profileImage" src="images/proimg.webp" class="rounded" height="300" alt="Profile Image">
+            </div>
+            <div class="col-md-8">
+                <form id="form">
+                    <input type="hidden" id="id" name="id">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="Enter name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="age" class="form-label">Age</label>
+                        <input type="number" id="age" name="age" class="form-control" placeholder="Enter age" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profImg" class="form-label">Profile Image</label>
+                        <input type="file" id="profImg" class="form-control" onchange="preview()" name="profile"
+                            accept="image/*">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary" onclick="submitForm()">Submit</button>
+                        <button type="button" class="btn btn-warning" onclick="updateForm()">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Table Section -->
+        <table class="table table-bordered mt-4">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="employees">
+                <!-- Rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
+        </script>
 </body>
 
 <style>
-    input {
-        display: block;
-        margin: 10px;
+    img#profileImage {
+        border: 1px solid #ccc;
     }
 
-    th,
-    td,
     table {
-        border: 1px solid black;
-
-    }
-
-    td,
-    th {
-        width: 100px;
-    }
-
-    #profileImage {
-        display: block;
+        width: 100%;
     }
 </style>
+
 <script>
-
+    // Preview the uploaded image
     function preview() {
-        console.log('preview')
-        const render = new FileReader();
-        const upload = document.getElementById('profImg').files[0];
+        const reader = new FileReader();
+        const file = document.getElementById('profImg').files[0];
 
-        render.onload = function () {
-            const img = document.getElementById("profileImage");
-            img.src = render.result;
-            img.style.display = 'block'
+        reader.onload = function (e) {
+            document.getElementById("profileImage").src = e.target.result;
         };
-        if (upload) {
-            render.readAsDataURL(upload)
+        if (file) {
+            reader.readAsDataURL(file);
         }
     }
 
-    function submit() {
+    // Function to display alert messages
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        alertContainer.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>`;
+        setTimeout(() => {
+            alertContainer.innerHTML = "";
+        }, 3000);
+    }
+
+    // Clear the form inputs
+    function clearForm() {
+        document.getElementById('form').reset();
+        document.getElementById('profileImage').src = 'images/proimg.webp';
+    }
+
+    // Submit form (add employee)
+    function submitForm() {
         const form = new FormData(document.getElementById('form'));
         fetch("http://localhost:8080/employee/add", {
             method: "POST",
             body: form
         }).then(res => res.json())
             .then(data => {
-                console.log(data)
+                showAlert('Employee added successfully!', 'success');
+                clearForm();
                 fillTable();
-            })
-
+            }).catch(() => showAlert('Error adding employee.', 'danger'));
     }
 
-    function getImg() {
-        fetch("http://localhost:8080/employee/pro")
-            .then(response => response.blob())
-            .then(imageBlob => {
-                // Do something with the imageBlob, like display it in an <img> tag
-                const imageUrl = URL.createObjectURL(imageBlob);
-                document.getElementById("profileImage").src = imageUrl;
-            })
-            .catch(error => console.error('Error:', error));
+    // Update form (edit employee)
+    function updateForm() {
+        const form = new FormData(document.getElementById('form'));
+        fetch("http://localhost:8080/employee/update", {
+            method: "PUT",
+            body: form
+        }).then(res => res.json())
+            .then(data => {
+                showAlert('Employee updated successfully!', 'success');
+                clearForm();
+                fillTable();
+            }).catch(() => showAlert('Error updating employee.', 'danger'));
     }
 
-    getImg();
+    // Delete employee
+    function deleteEmployee(id) {
+        fetch(`http://localhost:8080/employee/delete/${id}`, {
+            method: "DELETE"
+        }).then(() => {
+            showAlert('Employee deleted successfully!', 'warning');
+            fillTable();
+        }).catch(() => showAlert('Error deleting employee.', 'danger'));
+    }
 
-    const empTable = document.getElementById('employees')
+    // Edit employee
+    function editEmployee(employee) {
+        document.getElementById('id').value = employee.id;
+        document.getElementById('name').value = employee.name;
+        document.getElementById('age').value = employee.age;
+
+        fetch(`http://localhost:8080/employee/getImage/${employee.id}`)
+            .then(res => res.blob())
+            .then(blob => {
+                const imageUrl = URL.createObjectURL(blob);
+                document.getElementById('profileImage').src = imageUrl;
+            })
+            .catch(() => {
+                document.getElementById('profileImage').src = 'images/proimg.webp';
+            });
+    }
+
+    // Fill the table with employee data
     function fillTable() {
-        console.log("fill table called")
-        empTable.innerHTML = "";
+        const empTable = document.getElementById('employees');
+        empTable.innerHTML = '';
+
         fetch("http://localhost:8080/employee/all")
             .then(res => res.json())
             .then(data => {
-                console.log(data);
-                data.forEach(e => {
+                data.forEach(employee => {
                     const row = `
-            <tr>
-            <td>${e.id}</td>
-            <td>${e.name}</td>
-            <td>${e.age}</td>
-            <td> <button onclick="deleteEmployee(${e.id})">Edit</button> <button onclick="deleteEmployee(${e.id})">Delete</button></td>
-            
-            </tr>`
-                    empTable.innerHTML += row
+                        <tr>
+                            <td>${employee.id}</td>
+                            <td>${employee.name}</td>
+                            <td>${employee.age}</td>
+                            <td>
+                                <button class="btn btn-warning" onclick='editEmployee(${JSON.stringify(employee)})'>Edit</button>
+                                <button class="btn btn-danger" onclick="deleteEmployee(${employee.id})">Delete</button>
+                            </td>
+                        </tr>`;
+                    empTable.innerHTML += row;
                 });
-            })
+            }).catch(() => showAlert('Error fetching employees.', 'danger'));
     }
 
+    // Load the table when the page loads
     fillTable();
-
-    function deleteEmployee(id) {
-        fetch("http://localhost:8080/employee/delete/" + id, {
-            method: "DELETE"
-        }).then(res => {
-            fillTable()
-        })
-
-    }
 </script>
 
 </html>
