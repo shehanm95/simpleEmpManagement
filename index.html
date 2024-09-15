@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <form id="form">
+        <input type="text" id="name" name="name" placeholder="Name" required>
+        <input type="number" id="age" name="age" placeholder="Age" required>
+        <input type="file" id="profile" name="profile" accept="image/*">
+
+    </form>
+    <button onclick="submit()"> submit</button>
+
+    <hr>
+    <table cellspacing="0">
+        <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>age</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody id="employees">
+            <!-- Rows will be inserted here -->
+        </tbody>
+    </table>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+
+<style>
+    input {
+        display: block;
+        margin: 10px;
+    }
+
+    th,
+    td,
+    table {
+        border: 1px solid black;
+
+    }
+
+    td,
+    th {
+        width: 100px;
+    }
+
+    #profileImage {
+        display: block;
+    }
+</style>
+<script>
+
+    function preview() {
+        console.log('preview')
+        const render = new FileReader();
+        const upload = document.getElementById('profImg').files[0];
+
+        render.onload = function () {
+            const img = document.getElementById("profileImage");
+            img.src = render.result;
+            img.style.display = 'block'
+        };
+        if (upload) {
+            render.readAsDataURL(upload)
+        }
+    }
+
+    function submit() {
+        const form = new FormData(document.getElementById('form'));
+        fetch("http://localhost:8080/employee/add", {
+            method: "POST",
+            body: form
+        }).then(res => res.json())
+            .then(data => {
+                console.log(data)
+                fillTable();
+            })
+
+    }
+
+    function getImg() {
+        fetch("http://localhost:8080/employee/pro")
+            .then(response => response.blob())
+            .then(imageBlob => {
+                // Do something with the imageBlob, like display it in an <img> tag
+                const imageUrl = URL.createObjectURL(imageBlob);
+                document.getElementById("profileImage").src = imageUrl;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    getImg();
+
+    const empTable = document.getElementById('employees')
+    function fillTable() {
+        console.log("fill table called")
+        empTable.innerHTML = "";
+        fetch("http://localhost:8080/employee/all")
+            .then(res => res.json())
+            .then(data => {
+                console.log(data);
+                data.forEach(e => {
+                    const row = `
+            <tr>
+            <td>${e.id}</td>
+            <td>${e.name}</td>
+            <td>${e.age}</td>
+            <td> <button onclick="deleteEmployee(${e.id})">Edit</button> <button onclick="deleteEmployee(${e.id})">Delete</button></td>
+            
+            </tr>`
+                    empTable.innerHTML += row
+                });
+            })
+    }
+
+    fillTable();
+
+    function deleteEmployee(id) {
+        fetch("http://localhost:8080/employee/delete/" + id, {
+            method: "DELETE"
+        }).then(res => {
+            fillTable()
+        })
+
+    }
+</script>
+
+</html>
